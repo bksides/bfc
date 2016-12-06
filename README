@@ -1,0 +1,140 @@
+BFC version 0.1 README
+Brandon Sides
+December 2016
+
+INSTALLATION
+--------------------
+
+	Use "sudo make install" to add bfc to your /usr/bin directory.  This
+	will allow you to use bfc from any directory, without having to specify
+	the exact path of the executable.
+
+	If you do not have root privileges or otherwise don't want to install
+	bfc to /usr/bin, you can simply do "make bfc".  This creates an
+	executable in "<extraction directory>/bfc/" called "bfc".  You can then
+	use it from any directory as long as you specify its path.
+
+USAGE
+--------------------
+
+	Usage of bfc is, for the moment, very limited and very simple.  Its
+	invocation will conform to the following pattern:
+
+	bfc <input file> [-o <output file>] [-v] [-h] [-c <compilation level=3>]
+
+	PARAMETERS:
+
+		input file: This parameter is a path to the input file.
+
+	OPTIONS:
+
+		-o	This option allows the user to specify a path to anoutput file
+			to which the final output shall be written.  The file need not
+			exist prior to the invocation of bfc.
+
+				Parameters:
+
+				output file: The path of the output file to be written.
+
+		-v	Directs bfc to print its version information prior to
+			initiating any compilation.
+
+		-h 	Directs bfc to print usage help prior to initiating any
+			compilation.
+
+		-c	Allows the user to specify how far down the compilation chain
+			bfc shall go.
+
+				Parameters:
+
+				compilation level: The point at which to stop compilation
+
+					1 indicates to stop after producing assembly output.
+
+					2 indicates to stop after producing an object file.
+
+					3 indicates to compile down to executable form.
+
+					If the -c option is not added, a compilation level of
+					3 will be used.
+
+DEVELOPERS
+--------------------
+	
+	UNDERSTANDING BFC
+
+		Developers are advised to read through the code and comments to
+		understand the logic behind the compilation of brainfuck programs.
+		Optimizations are listed on the github wiki and links to them are
+		provided in comments next to the code which implements them, so that
+		developers can avoid being confused by potentially obscure code.
+
+		Not much extensive documentation exists at this time, except for the
+		aforementioned list of optimizations, and not much is expected ever
+		to be drafted.  The real logic behind brainfuck is simple enough
+		that one can expect the source code for this program to remain
+		accessible without much documentation for the forseeable future.
+
+	TESTING BFC
+
+		THE TEST SUITE
+		
+		A test suite is included in the distribution tarball, under
+		"<extraction directory>/bfc/tests".  Brainfuck source files, input
+		files, and desired output files are all included.  The extensions
+		work as follows, using the test titled "helloworld" as an example:
+
+			test-helloworld.b: 		A file containing the brainfuck source
+									code of the test.
+
+			test-helloworld.in:		A file containing the input on which
+									the program shall be tested.
+
+			test-helloworld.check:	The expected output the program should
+									produce when provided the above input.
+
+		VIEWING TEST OUTPUT
+
+		A makefile is included in the tests directory which can be used to
+		easily perform tests on bfc.  One can, for instance, view the output
+		of a given program on its appropriate input as compiled by the
+		current version of bfc with:
+
+			make test-<test title>.o
+
+		This produces a file containing the program output.
+
+		So, using helloworld as an example again, one would invoke "make
+		test-helloworld.o" to produce an output file for the helloworld
+		test.
+
+		ASSESSING PROGRAM CORRECTNESS
+
+		If one would like to see if one's current version of bfc is
+		compiling a particular test correctly, one can use the following
+		command:
+
+			make test-<test title>.r
+
+		The .r extension is intended to denote a "result".  Note that no .r
+		file is actually created and that this target is simply a way for a
+		user to see whether the output file matches the .check file.
+
+		This checking is done using the diffcheck program included in the 
+		tests directory.
+
+		RUNNING THE ENTIRE TEST SUITE
+
+		Perhaps the most useful make target is simply
+
+			make test
+
+		This target makes the .r target for every test listed in the
+		makefile's RESULTS variable.  It is very useful for testing the
+		integrity of bfc following a change.
+
+		WRITING TESTS
+
+		If a developer would like to add a test to the test suite, they may
+		do so by creating the necessary files (i.e. a .b, .in and .check
+		file), and adding the .r target the RESULTS variable in the makefile.
