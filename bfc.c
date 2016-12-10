@@ -31,13 +31,18 @@ void parse_args(int argc, char** argv, int* isversion, int* ishelp, char** outpu
 		{
 			*isversion = 1;
 		}
-		if(!strcmp(argv[i], "-h"))
+		else if(!strcmp(argv[i], "-h"))
 		{
 			*ishelp = 1;
 		}
-		if(!strcmp(argv[i], "-o"))
+		else if(!strcmp(argv[i], "-o"))
 		{
 			*output = argv[i+1];
+			i++;
+		}
+		else if(!strcmp(argv[i], "-c"))
+		{
+			*complev = atoi(argv[i+1]);
 			i++;
 		}
 		else
@@ -56,7 +61,7 @@ int compile(FILE* in, FILE* out)
 {
 	fprintf(out, ".data\n"
 				 "ARR:\n"
-				 ".space 32430\n"
+				 ".space 32768\n"
 				 ".text\n"
 				 ".globl _start\n"
 				 ".type _start, @function\n"
@@ -159,7 +164,7 @@ int compile(FILE* in, FILE* out)
 	return 0;
 }
 
-int assemble(char* in, char* out)
+int assemble(char* in, char* out, int complev)
 {
 	int pid = fork();
 	if(pid)
@@ -179,21 +184,67 @@ int assemble(char* in, char* out)
 			//return 7;
 			return 0;
 		}
+		int pid = fork();
+		if(pid)
+		{
+			waitpid(pid, &status, 0);
+			if(WIFEXITED(status) && WEXITSTATUS(status))
+			{
+				int exit = WEXITSTATUS(status);
+				printf("Error: Compilation failed on linking stage.\n");
+				return 6;
+			}
+			else if(WIFSIGNALED(status))
+			{
+				printf("Error: Compilation interrupted on linking stage\n");
+				return 7;
+			}
+		}
+		else
+		{
+			if(complev > 2)
+			{
+				char* tmp = calloc(strlen(out) + 10, sizeof(char));
+				strcpy(tmp, out);
+				strcpy(tmp+strlen(out), ".bfctmp.o");
+				FILE* ld = fopen("bfc.ld", "w");
+				fprintf(ld, "ENTRY(_start)"
+							"PHDRS\n"
+							"{\n"
+							"\theaders PT_PHDR PHDRS ;\n"
+							"\ttext PT_LOAD FILEHDR PHDRS ;\n"
+							"\tdata PT_LOAD ;\n"
+							"}\n"
+							"SECTIONS\n"
+							"{\n"
+  							"\t. = 0x400000;\n"
+  							"\t.text . : { *(.text) } :text\n"
+  							"\t. = ALIGN(4096);\n"
+  							"\t.data . : { *(.data) } :data\n"
+							"}");
+				fclose(ld);
+				char* ldargs[] = {"ld", tmp, "-T", "bfc.ld", "-o", out};
+				execvp("ld", ldargs);
+			}
+		}
 		return 0;
 	}
 	else
 	{
-		/*
-		char* tmp = calloc(strlen(out) + 10, sizeof(char));
-		strcpy(tmp, out);
-		strcpy(tmp+strlen(out), ".bfctmp.o");
-		printf("%s\n", tmp);
-		execle("/usr/bin/as", in, "-o", tmp);
-		printf("Made it past assembly.\n");
-		execle("/usr/bin/ld", "-nostdlib", tmp, "-o", out);
-		*/
-		char* args[] = {"gcc", "-nostdlib", in, "-o", out, 0};
-		execvp("/usr/bin/gcc", args);
+		if(complev > 2)
+		{
+			char* tmp = calloc(strlen(out) + 10, sizeof(char));
+			strcpy(tmp, out);
+			strcpy(tmp+strlen(out), ".bfctmp.o");
+
+			char* asargs[] = {"as", in, "-o", tmp, 0};
+			execvp("as", asargs);
+		}
+		else
+		{
+			char* asargs[] = {"as", in, "-o", out, 0};
+			execvp("as", asargs);
+		}
 	}
 }
 
@@ -247,7 +298,7 @@ int main(int argc, char** argv)
 			//in = fopen(newout, "r");
 			//out = fopen(output, "w");
 			int resas;
-			if(resas = assemble(newout, output))
+			if(resas = assemble(newout, output, complev))
 			{
 				remove(output);
 				remove(newout);
