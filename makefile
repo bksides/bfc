@@ -24,6 +24,7 @@ tests/diffcheck: tests/diffcheck.c
 clean:
 	rm -f bfc
 	rm -f tests/*.o
+	rm -rf *.ld
 	make -C tests clean
 
 uninstall:
