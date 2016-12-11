@@ -28,7 +28,7 @@ USAGE
 
 	OPTIONS:
 
-		-o	This option allows the user to specify a path to anoutput file
+		-o	This option allows the user to specify a path to an output file
 			to which the final output shall be written.  The file need not
 			exist prior to the invocation of bfc.
 
