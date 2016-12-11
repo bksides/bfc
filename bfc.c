@@ -166,6 +166,9 @@ int compile(FILE* in, FILE* out)
 
 int assemble(char* in, char* out, int complev)
 {
+	char* tmp = calloc(strlen(out) + 10, sizeof(char));
+	strcpy(tmp, out);
+	strcpy(tmp+strlen(out), ".bfctmp.o");
 	int pid = fork();
 	if(pid)
 	{
@@ -175,14 +178,12 @@ int assemble(char* in, char* out, int complev)
 		{
 			int exit = WEXITSTATUS(status);
 			printf("Error: Compilation failed on assembly stage.\n");
-			//return 6;
-			return 0;
+			return 6;
 		}
 		else if(WIFSIGNALED(status))
 		{
 			printf("Error: Compilation interrupted on assembly stage\n");
-			//return 7;
-			return 0;
+			return 7;
 		}
 		int pid = fork();
 		if(pid)
@@ -192,11 +193,13 @@ int assemble(char* in, char* out, int complev)
 			{
 				int exit = WEXITSTATUS(status);
 				printf("Error: Compilation failed on linking stage.\n");
+				remove(tmp);
 				return 6;
 			}
 			else if(WIFSIGNALED(status))
 			{
 				printf("Error: Compilation interrupted on linking stage\n");
+				remove(tmp);
 				return 7;
 			}
 		}
@@ -204,9 +207,6 @@ int assemble(char* in, char* out, int complev)
 		{
 			if(complev > 2)
 			{
-				char* tmp = calloc(strlen(out) + 10, sizeof(char));
-				strcpy(tmp, out);
-				strcpy(tmp+strlen(out), ".bfctmp.o");
 				FILE* ld = fopen("bfc.ld", "w");
 				fprintf(ld, "ENTRY(_start)"
 							"PHDRS\n"
@@ -233,10 +233,6 @@ int assemble(char* in, char* out, int complev)
 	{
 		if(complev > 2)
 		{
-			char* tmp = calloc(strlen(out) + 10, sizeof(char));
-			strcpy(tmp, out);
-			strcpy(tmp+strlen(out), ".bfctmp.o");
-
 			char* asargs[] = {"as", in, "-o", tmp, 0};
 			execvp("as", asargs);
 		}
